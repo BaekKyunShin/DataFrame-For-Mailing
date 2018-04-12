@@ -1,6 +1,7 @@
 # 풀어야할 것: 하루에 두 강사가 들어가는 경우 (홍길동/김철수)
 # 장기과정은 제외
 # 비고에 비고사항 넣기
+# 추후 구조화하기
 
 import openpyxl
 import pandas as pd
@@ -33,12 +34,12 @@ def GetNameOnly(instructor):
     nameOnly = nameOnly.replace("?", "")
     return nameOnly
 
+# 주의사항 및 비고에서 timeSequence 문자열만 추출하기
 def GetTimeSequence(string):
     startIndex = string.index('(')
     endIndex = string.index(')')
     timeSequence = string[startIndex:endIndex+1]
     return timeSequence 
-
     
 # df의 '강사', '날짜' columns에  강사와 날짜 데이터 append 하기
 def GetInstructorAndDate(row):
@@ -64,6 +65,7 @@ def GetInstructorAndDate(row):
                         break
     return instructorList, dateList
 
+# 대분류를 받아서 데이터 저장용 DataFrame 만들기
 def MakeDF(df, section):
     for row in range(4, sheet._current_row + 1):
         if sheet[row][0].value == section:
@@ -77,9 +79,7 @@ df = MakeDF(df, '구매자재')
 newColumns = ['강사', '과정명', '강의장', '날짜', '비고']
 newdf = pd.DataFrame(columns = newColumns)
 
-
-
-
+# 예정강의장, 변경강의장으로 부터 강의장소 정보 받아오기 (숫자일 경우 서울, 그 이외는 지방)
 def SelectClassRoom(plan, change):
     if change is None:
         try:
@@ -96,6 +96,7 @@ def SelectClassRoom(plan, change):
             
     return classRoom
 
+# 과정별 해당강사의 강의일정 받아보기
 def SelectDate(instructor, instructorList, dateList):
     allIndexList = [index for index, value in enumerate(instructorList) if value == instructor]
     if len(allIndexList) == 1 :
@@ -111,17 +112,14 @@ def SelectDate(instructor, instructorList, dateList):
                 date += dateList[index]
     return date
     
-
-    
     
 
-
+# 메인 구문
 for instructor in allInstructor:
     for index, row in df.iterrows():
         if instructor in row['강사']:
             classRoom = SelectClassRoom(row[3], row[4])
             date = SelectDate(instructor, row[7], row[8])
             newdf = newdf.append({'강사': instructor, '과정명': row[2], '강의장': classRoom, '날짜': date}, True)
-
 
 print(newdf)
