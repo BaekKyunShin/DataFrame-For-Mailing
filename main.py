@@ -40,14 +40,14 @@ class Mailing():
         self.nameOnly = self.nameOnly.replace("?", "")
         return self.nameOnly
 
-    # 주의사항 및 비고에서 timeSequence 문자열만 추출하기
+    # 주의사항 및 비고에서 timeSequence 문자열만 추출하기 (ex: (8-8-4))
     def GetTimeSequence(self, string):
         self.startIndex = string.index('(')
         self.endIndex = string.index(')')
         self.timeSequence = string[self.startIndex:self.endIndex+1]
         return self.timeSequence 
         
-    # df의 '강사', '날짜' columns에  강사와 날짜 데이터 append 하기
+    # 엑셀 sheet로 부터 강사와 날짜 데이터 List로 받아오기
     def GetInstructorAndDate(self, row):
         self.instructorList = []
         self.dateList = []
@@ -109,7 +109,7 @@ class Mailing():
             commentList.append(int(time))
         return commentList
 
-    # 과정별 해당강사의 강의일정 받아보기
+    # 과정별 해당강사의 강의일정과 비고사항 받아보기
     def SelectDateAndComment(self, instructor, comment, instructorList, dateList):
         allIndexList = [index for index, value in enumerate(instructorList) if value == instructor]
         commentList = self.GetInt(comment)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     instructor_file = 'Instructor.xlsx'
     exceptionCourses = ['CPSM(국제공인 공급관리전문가)양성', '구매관리사(KCPM)', '[자격과정]생산경영MBA', '[자격과정]품질경영관리사양성', '[자격과정]기술경영(MOT)전문가양성']
     section = '구매자재'
-    month = 8
+    month = 6
 
     mailing = Mailing(section, month, schedule_file, instructor_file, exceptionCourses) # mailing 클래스 생성
     mailing.MakeDF(section) #데이터 저장용 DF 만들기
