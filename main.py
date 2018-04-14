@@ -1,6 +1,4 @@
 # 풀어야할 것: 하루에 두 강사가 들어가는 경우 (홍길동/김철수)
-# 장기과정은 제외
-# 비고에 비고사항 넣기
 # 추후 구조화하기
 
 import openpyxl
@@ -19,12 +17,12 @@ dfInstructor = pd.read_excel(instructor_file)
 allInstructor = []
 
 month_sheets = [sheet_name for sheet_name in workbook.sheetnames if '월' in sheet_name]
-sheet_name = month_sheets[4] # sheet: 5월로 지정 (test용)
+sheet_name = month_sheets[6] # sheet: 5월로 지정 (test용)
 sheet = workbook[sheet_name]
 
 dayOfWeek = ('월', '화', '수', '목', '금', '토', '일')
 columns = ['행번호', '사업구분', '과정명', '강의장(예정)', '강의장(변경)', '개강시간', '주의사항 및 비고', '강사', '날짜']
-
+ExceptionCourses = ['CPSM(국제공인 공급관리전문가)양성', '구매관리사(KCPM)', '[자격과정]생산경영MBA', '[자격과정]품질경영관리사양성', '[자격과정]기술경영(MOT)전문가양성']
 # DataFrame 생성
 df = pd.DataFrame(columns = columns)
 
@@ -69,13 +67,14 @@ def GetInstructorAndDate(row):
 def MakeDF(df, section):
     for row in range(4, sheet._current_row + 1):
         if sheet[row][0].value == section:
-            instructorList, dateList =  GetInstructorAndDate(row)
-            timeSequence = GetTimeSequence(sheet[row][9].value)
-            df = df.append({'행번호': row, '사업구분': sheet[row][0].value, '과정명': sheet[row][1].value, '강의장(예정)': sheet[row][2].value, '강의장(변경)': sheet[row][3].value, '개강시간': sheet[row][5].value.strftime('%R'), '주의사항 및 비고': timeSequence, '강사': instructorList, '날짜': dateList}, True)
+            if not sheet[row][1].value.strip() in ExceptionCourses: 
+                instructorList, dateList =  GetInstructorAndDate(row)
+                timeSequence = GetTimeSequence(sheet[row][9].value)
+                df = df.append({'행번호': row, '사업구분': sheet[row][0].value, '과정명': sheet[row][1].value, '강의장(예정)': sheet[row][2].value, '강의장(변경)': sheet[row][3].value, '개강시간': sheet[row][5].value.strftime('%R'), '주의사항 및 비고': timeSequence, '강사': instructorList, '날짜': dateList}, True)
     return df
 
 # 과정명, 강사, 장소, 교육일정, 비고
-df = MakeDF(df, '구매자재')
+df = MakeDF(df, '생산')
 newColumns = ['강사', '과정명', '강의장', '날짜', '비고']
 newdf = pd.DataFrame(columns = newColumns)
 
@@ -96,30 +95,49 @@ def SelectClassRoom(plan, change):
             
     return classRoom
 
+# ex '(8-8-4)' 를 [8, 8, 4]로 변경하기
+def GetInt(comment):
+    comment = comment[1:-1].split('-')
+    commentList = []
+    for time in comment:
+        commentList.append(int(time))
+    return commentList   
+
 # 과정별 해당강사의 강의일정 받아보기
-def SelectDate(instructor, instructorList, dateList):
+def SelectDateAndComment(instructor, comment, instructorList, dateList):
     allIndexList = [index for index, value in enumerate(instructorList) if value == instructor]
+    commentList = GetInt(comment)
     if len(allIndexList) == 1 :
         date = dateList[allIndexList[0]]
+        comment = str(allIndexList[0]+1) +'일차 / ' + '총 ' + str(commentList[allIndexList[0]]) + '시간'
     elif len(instructorList) == allIndexList[-1] - allIndexList[0] + 1:
         date = dateList[0] + ' ~ ' + dateList[-1]
+        comment = '전일 / 총 ' + str(sum(commentList)) + '시간'
     else: 
         date = ''
+        comment = ''
+        timeForComment = 0
         for index in allIndexList:
             if index != allIndexList[-1]:
                 date += dateList[index] + ', '
+                comment += str(index+1) + ', '
             else:
                 date += dateList[index]
-    return date
-    
-    
+                comment += str(index+1) + '일차'
+            timeForComment += commentList[index]
+        comment = comment + ' / 총 ' + str(timeForComment) +'시간'
+    return date, comment
 
 # 메인 구문
 for instructor in allInstructor:
     for index, row in df.iterrows():
         if instructor in row['강사']:
             classRoom = SelectClassRoom(row[3], row[4])
-            date = SelectDate(instructor, row[7], row[8])
-            newdf = newdf.append({'강사': instructor, '과정명': row[2], '강의장': classRoom, '날짜': date}, True)
+            date, comment = SelectDateAndComment(instructor, row[6], row[7], row[8])
+            newdf = newdf.append({'강사': instructor, '과정명': row[2], '강의장': classRoom, '날짜': date, '비고': comment}, True)
 
-print(newdf)
+
+writer = pd.ExcelWriter('newDF.xlsx')
+newdf.to_excel(writer,'Sheet1')
+writer.save()
+
