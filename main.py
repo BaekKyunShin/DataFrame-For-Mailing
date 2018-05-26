@@ -16,6 +16,7 @@ class Mailing():
         self.dfInstructor = pd.read_excel(instructor_file)
     
         # 강사리스트
+
         self.allInstructor = []
 
         self.month_sheets = [sheet_name for sheet_name in self.workbook.sheetnames if '월' in sheet_name]
@@ -168,7 +169,7 @@ if __name__ == '__main__':
     instructor_file = 'Instructor.xlsx'
     exceptionCourses = ['CPSM(국제공인 공급관리전문가)양성', '구매관리사(KCPM)', '[자격과정]생산경영MBA', '[자격과정]품질경영관리사양성', '[자격과정]기술경영(MOT)전문가양성']
     section = '구매자재'
-    month = 6
+    month = 7
 
     mailing = Mailing(section, month, schedule_file, instructor_file, exceptionCourses) # mailing 클래스 생성
     mailing.MakeDF(section) #데이터 저장용 DF 만들기
